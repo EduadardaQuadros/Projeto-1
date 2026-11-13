@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tutorial · Escola de Vôlei</title>
+  <style>
+    :root { color-scheme: light; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "Helvetica Neue", sans-serif;
+      line-height: 1.5;
+      color: #1b2430;
+      background: #f4efe6;
+    }
+    header {
+      background: #12355b;
+      color: #fff;
+      padding: 28px 20px;
+    }
+    header p { margin: 6px 0 0; color: #d6e2ee; }
+    main { width: min(760px, calc(100% - 32px)); margin: 24px auto 48px; }
+    h1, h2 { letter-spacing: -0.03em; line-height: 1.2; }
+    h2 { margin-top: 32px; }
+    a { color: #12355b; }
+    .cartao, .passo {
+      background: #fffdf9;
+      border: 1px solid #e6dccb;
+      border-radius: 16px;
+      padding: 16px 18px;
+      margin: 12px 0;
+    }
+    .passo { border-left: 5px solid #e4572e; }
+    .num {
+      display: inline-block;
+      min-width: 1.6rem;
+      font-weight: 800;
+      color: #e4572e;
+    }
+    code, .acesso {
+      font-family: Consolas, "Courier New", monospace;
+      background: #fff4ee;
+      padding: 0 4px;
+      border-radius: 4px;
+    }
+    table { width: 100%; border-collapse: collapse; background: #fffdf9; }
+    th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid #e6dccb; vertical-align: top; }
+    th { background: #12355b; color: #fff; }
+    .aviso { background: #ffedd5; color: #9a3412; border-radius: 12px; padding: 12px 14px; font-weight: 700; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Tutorial da Escola de Vôlei</h1>
+    <p>Como cadastrar turmas, horários, professores, alunos e responsáveis.</p>
+  </header>
+  <main>
+    <section class="cartao">
+      <p>Abra o sistema em <a href="http://127.0.0.1/Projeto%201/">http://127.0.0.1/Projeto%201/</a>. O Apache e o MySQL do XAMPP precisam estar ligados.</p>
+      <p>No primeiro acesso, entre como equipe:</p>
+      <p class="acesso">admin@escola.local<br>volei123</p>
+      <p>Essa dica some da tela de entrar depois que a senha da equipe for trocada. Use o link <strong>Senha</strong> no topo para isso.</p>
+    </section>
+
+    <h2>Quem usa o sistema</h2>
+    <table>
+      <thead>
+        <tr><th>Papel</th><th>O que faz</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Equipe</td><td>Cadastra tudo e redefine senhas.</td></tr>
+        <tr><td>Responsável</td><td>Vê só os próprios filhos, as turmas, os professores e os horários.</td></tr>
+        <tr><td>Professor</td><td>Vê só as turmas em que está vinculado, com horários e o nome dos alunos.</td></tr>
+        <tr><td>Aluno</td><td>Vê só as próprias turmas, os horários e os professores. Não vê os colegas.</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Ordem recomendada</h2>
+    <p>Cadastre o responsável antes do aluno menor. Sem isso, o sistema recusa o aluno com menos de 18 anos.</p>
+
+    <article class="passo">
+      <h2><span class="num">1.</span> Responsável</h2>
+      <p>No menu inferior, abra <strong>Responsáveis</strong> e toque em <strong>Novo responsável</strong>.</p>
+      <ul>
+        <li>Nome, e-mail e senha inicial são obrigatórios. O e-mail é o login.</li>
+        <li>Telefone e CPF podem ficar em branco. Se informar o CPF, ele precisa ser válido e não pode repetir o de outro responsável.</li>
+      </ul>
+      <p>Na ficha, dá para vincular alunos, redefinir a senha e desativar o acesso.</p>
+    </article>
+
+    <article class="passo">
+      <h2><span class="num">2.</span> Professor</h2>
+      <p>Abra <strong>Professores</strong> e toque em <strong>Novo professor</strong>. Vale a mesma regra de e-mail, senha e CPF opcional.</p>
+      <p>Um professor pode dar aula em várias turmas. O vínculo pode ser feito na ficha dele ou na ficha da turma.</p>
+    </article>
+
+    <article class="passo">
+      <h2><span class="num">3.</span> Aluno</h2>
+      <p>Abra <strong>Alunos</strong> e toque em <strong>Novo aluno</strong>.</p>
+      <ul>
+        <li>Informe nome, data de nascimento, e-mail e senha inicial.</li>
+        <li>Telefone e CPF são opcionais.</li>
+        <li>Se a data indicar menos de 18 anos, escolha um responsável e o parentesco (mãe, pai ou outro) antes de salvar.</li>
+        <li>Aluno adulto pode ser salvo sem responsável. Se quiser, o vínculo pode ser feito depois.</li>
+      </ul>
+      <p class="aviso">Não dá para tirar o último responsável de um aluno menor. Também não dá para mudar a data para menos de 18 anos se ainda não houver responsável.</p>
+    </article>
+
+    <article class="passo">
+      <h2><span class="num">4.</span> Turma e horários</h2>
+      <p>Abra <strong>Turmas</strong> e toque em <strong>Nova turma</strong>. Preencha nome e nível (iniciante, intermediário ou avançado). Local e capacidade podem ficar em branco. Deixe <strong>Turma ativa</strong> marcado para ela aparecer para alunos e professores.</p>
+      <p>Na ficha da turma, em <strong>Horários</strong>, escolha o dia, o início e o fim. O fim precisa ser depois do início. Dois horários da mesma turma não podem se cruzar no mesmo dia. Um pode terminar às 19:00 e outro começar às 19:00.</p>
+    </article>
+
+    <article class="passo">
+      <h2><span class="num">5.</span> Professores da turma</h2>
+      <p>Ainda na ficha da turma, em <strong>Professores</strong>, escolha um professor e toque em <strong>Vincular</strong>. Repita para incluir outros. <strong>Tirar</strong> remove só o vínculo; a turma e o professor continuam cadastrados. A turma pode ficar sem professor.</p>
+    </article>
+
+    <article class="passo">
+      <h2><span class="num">6.</span> Matricular</h2>
+      <p>Na ficha da turma, em <strong>Alunos matriculados</strong>, escolha o aluno e a data de início. O mesmo aluno não pode ter duas matrículas ativas na mesma turma. Se a turma tiver capacidade, a matrícula para quando as vagas acabam. Turma inativa não recebe matrícula nova.</p>
+      <p><strong>Encerrar</strong> fecha a matrícula. Depois disso, o aluno pode ser matriculado de novo. Dá para matricular também pela ficha do aluno.</p>
+    </article>
+
+    <h2>O que cada pessoa vê ao entrar</h2>
+    <div class="cartao">
+      <p><strong>Responsável.</strong> A tela inicial é <strong>Meus filhos</strong>. Ao abrir um filho, aparecem as turmas ativas, os nomes dos professores e os horários.</p>
+      <p><strong>Professor.</strong> A tela inicial é <strong>Minhas turmas</strong>. Na turma, ele vê os horários e o nome dos alunos, com o selo <strong>Menor</strong> quando for o caso. Não vê CPF nem edita cadastro.</p>
+      <p><strong>Aluno.</strong> Também começa em <strong>Minhas turmas</strong>. Na turma, vê horários e professores, sem a lista de colegas.</p>
+      <p>Se alguém mudar o número no endereço para abrir um registro que não é dele, o sistema recusa.</p>
+    </div>
+
+    <h2>Senhas e acesso</h2>
+    <div class="cartao">
+      <p>Cada pessoa troca a própria senha em <strong>Senha</strong>. A equipe redefine a senha dos outros na ficha, no bloco <strong>Acesso</strong>, e pode desativar o login sem apagar o cadastro.</p>
+      <p>O e-mail de login não se repete entre equipe, responsável, professor e aluno.</p>
+    </div>
+  </main>
+</body>
+</html>
