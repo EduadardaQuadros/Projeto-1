@@ -9,6 +9,9 @@
     <?php endif; ?>
     <form method="post" action="<?= e(url('/login')) ?>" class="form">
         <?= csrf_field() ?>
+        <?php if (!empty($depois)): ?>
+            <input type="hidden" name="depois" value="<?= e($depois) ?>">
+        <?php endif; ?>
         <label for="email">E-mail</label>
         <input id="email" name="email" type="email" inputmode="email" autocomplete="username" required maxlength="180" value="<?= e($email ?? '') ?>">
         <label for="senha">Senha</label>

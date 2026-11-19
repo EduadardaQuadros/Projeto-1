@@ -3,6 +3,20 @@
     <a class="btn btn-secundario btn-linha" href="<?= e(url('/turmas/' . $turma['id'] . '/editar')) ?>">Editar</a>
 </div>
 <section class="bloco">
+    <h2>Link para o aluno</h2>
+    <p class="estado">Envie este link para o aluno se cadastrar e entrar nesta turma.</p>
+    <label for="link-convite">Endereço</label>
+    <input id="link-convite" readonly value="<?= e($link_convite) ?>">
+    <div class="linha-acoes">
+        <button class="btn btn-secundario btn-linha" id="copiar-convite" type="button">Copiar link</button>
+    </div>
+    <p id="aviso-copiado" class="flash flash-ok" role="status" hidden>Link copiado</p>
+    <form method="post" action="<?= e(url('/turmas/' . $turma['id'] . '/convite')) ?>" onsubmit="return confirm('Gerar um novo link? O link atual deixa de funcionar.');">
+        <?= csrf_field() ?>
+        <button class="btn-perigo" type="submit">Gerar novo link</button>
+    </form>
+</section>
+<section class="bloco">
     <dl class="ficha">
         <div><dt>Nível</dt><dd><?= e(NIVEIS[$turma['nivel']] ?? '') ?></dd></div>
         <div><dt>Local</dt><dd><?= e($turma['local'] ?: '—') ?></dd></div>

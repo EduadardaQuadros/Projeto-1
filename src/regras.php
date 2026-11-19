@@ -11,11 +11,16 @@ function criar_usuario(PDO $pdo, string $nome, string $email, string $senhaHash,
 
 function dados_pessoa(): array
 {
+    return dados_campos('');
+}
+
+function dados_campos(string $prefixo): array
+{
     return [
-        'nome' => nome_valido(campo('nome')),
-        'email' => email_valido(campo('email')),
-        'telefone' => telefone_ou_nulo(campo('telefone')),
-        'cpf' => cpf_ou_nulo(campo('cpf')),
+        'nome' => nome_valido(campo($prefixo . 'nome')),
+        'email' => email_valido(campo($prefixo . 'email')),
+        'telefone' => telefone_ou_nulo(campo($prefixo . 'telefone')),
+        'cpf' => cpf_ou_nulo(campo($prefixo . 'cpf')),
     ];
 }
 
@@ -196,10 +201,79 @@ function criar_turma(): int
 {
     $dados = dados_turma();
     exec_sql(
-        'INSERT INTO turmas (nome, nivel, local, capacidade, ativa) VALUES (?, ?, ?, ?, ?)',
-        [$dados['nome'], $dados['nivel'], $dados['local'], $dados['capacidade'], $dados['ativa']]
+        'INSERT INTO turmas (nome, nivel, local, capacidade, ativa, convite) VALUES (?, ?, ?, ?, ?, ?)',
+        [$dados['nome'], $dados['nivel'], $dados['local'], $dados['capacidade'], $dados['ativa'], novo_convite()]
     );
     return (int) db()->lastInsertId();
+}
+
+function renovar_convite(int $turmaId): void
+{
+    if (q1('SELECT id FROM turmas WHERE id = ?', [$turmaId]) === null) {
+        nao_encontrado('Turma não encontrada.');
+    }
+    exec_sql('UPDATE turmas SET convite = ? WHERE id = ?', [novo_convite(), $turmaId]);
+}
+
+function turma_por_convite(string $token): ?array
+{
+    if (!preg_match('/^[a-f0-9]{32}$/', $token)) {
+        return null;
+    }
+    return q1('SELECT * FROM turmas WHERE convite = ?', [$token]);
+}
+
+function garantir_link_convite(array $turma): string
+{
+    $token = (string) ($turma['convite'] ?? '');
+    if (!preg_match('/^[a-f0-9]{32}$/', $token)) {
+        $token = novo_convite();
+        exec_sql('UPDATE turmas SET convite = ? WHERE id = ?', [$token, (int) $turma['id']]);
+    }
+    return url_absoluta('/convite/' . $token);
+}
+
+function cadastrar_aluno_na_turma(int $turmaId): int
+{
+    $dados = dados_pessoa();
+    $nascimento = campo('data_nascimento');
+    validar_nascimento($nascimento);
+    $senhaHash = validar_senha_campos('senha', 'senha_confirmacao');
+    $menor = eh_menor($nascimento);
+    $responsavel = null;
+    $parentesco = '';
+    $senhaResponsavel = null;
+    if ($menor) {
+        $responsavel = dados_campos('resp_');
+        $parentesco = campo('parentesco');
+        exigir_parentesco($parentesco);
+        $senhaResponsavel = validar_senha_campos('resp_senha', 'resp_senha_confirmacao');
+        if ($responsavel['email'] === $dados['email']) {
+            throw new ValidacaoException('O e-mail do aluno e o do responsável precisam ser diferentes.');
+        }
+        garantir_email_cpf('responsaveis', $responsavel['email'], $responsavel['cpf']);
+    }
+    garantir_email_cpf('alunos', $dados['email'], $dados['cpf']);
+
+    return (int) transacao(function (PDO $pdo) use ($dados, $nascimento, $senhaHash, $menor, $responsavel, $parentesco, $senhaResponsavel, $turmaId): int {
+        $responsavelId = 0;
+        if ($menor && $responsavel !== null && $senhaResponsavel !== null) {
+            $usuarioResponsavel = criar_usuario($pdo, $responsavel['nome'], $responsavel['email'], $senhaResponsavel, 'responsavel');
+            $st = $pdo->prepare('INSERT INTO responsaveis (usuario_id, telefone, cpf) VALUES (?, ?, ?)');
+            $st->execute([$usuarioResponsavel, $responsavel['telefone'], $responsavel['cpf']]);
+            $responsavelId = (int) $pdo->lastInsertId();
+        }
+        $usuarioId = criar_usuario($pdo, $dados['nome'], $dados['email'], $senhaHash, 'aluno');
+        $st = $pdo->prepare('INSERT INTO alunos (usuario_id, nome, data_nascimento, telefone, cpf) VALUES (?, ?, ?, ?, ?)');
+        $st->execute([$usuarioId, $dados['nome'], $nascimento, $dados['telefone'], $dados['cpf']]);
+        $alunoId = (int) $pdo->lastInsertId();
+        if ($responsavelId > 0) {
+            $st = $pdo->prepare('INSERT INTO aluno_responsavel (aluno_id, responsavel_id, parentesco) VALUES (?, ?, ?)');
+            $st->execute([$alunoId, $responsavelId, $parentesco]);
+        }
+        matricular($alunoId, $turmaId, hoje());
+        return $usuarioId;
+    });
 }
 
 function atualizar_turma(int $id): void

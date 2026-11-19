@@ -4,21 +4,24 @@ declare(strict_types=1);
 
 function tela_login(): void
 {
+    $depois = caminho_convite($_GET['depois'] ?? null);
     if (Auth::usuario() !== null) {
-        redirect('/');
+        redirect($depois ?? '/');
     }
     render('login', [
         'titulo' => 'Entrar',
         'erro' => null,
         'email' => '',
+        'depois' => $depois ?? '',
         'dica_inicial' => senha_inicial_ativa(),
     ], true);
 }
 
 function entrar(): void
 {
+    $depois = caminho_convite(campo('depois'));
     if (Auth::usuario() !== null) {
-        redirect('/');
+        redirect($depois ?? '/');
     }
     $email = mb_strtolower(trim(campo('email')));
     $senha = campo_raw('senha');
@@ -29,13 +32,14 @@ function entrar(): void
             $erro = 'Acesso desativado. Fale com a equipe da escola.';
         } else {
             Auth::entrar($usuario);
-            redirect('/');
+            redirect($depois ?? '/');
         }
     }
     render('login', [
         'titulo' => 'Entrar',
         'erro' => $erro,
         'email' => $email,
+        'depois' => $depois ?? '',
         'dica_inicial' => senha_inicial_ativa(),
     ], true);
 }
@@ -43,8 +47,9 @@ function entrar(): void
 function sair(): void
 {
     require_login();
+    $depois = caminho_convite(campo('depois'));
     Auth::sair();
-    redirect('/login');
+    redirect($depois ?? '/login');
 }
 
 function senha_inicial_ativa(): bool

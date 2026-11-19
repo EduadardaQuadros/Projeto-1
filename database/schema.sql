@@ -72,9 +72,11 @@ CREATE TABLE turmas (
   local VARCHAR(120) NULL,
   capacidade INT UNSIGNED NULL,
   ativa TINYINT(1) NOT NULL DEFAULT 1,
+  convite CHAR(32) NOT NULL,
   criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   atualizado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  CONSTRAINT ck_turmas_capacidade CHECK (capacidade IS NULL OR capacidade >= 1)
+  CONSTRAINT ck_turmas_capacidade CHECK (capacidade IS NULL OR capacidade >= 1),
+  UNIQUE KEY uq_turmas_convite (convite)
 ) ENGINE=InnoDB;
 
 CREATE TABLE horarios (

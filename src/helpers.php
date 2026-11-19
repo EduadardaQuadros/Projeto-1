@@ -104,6 +104,27 @@ function base_path(): string
     return $base;
 }
 
+function novo_convite(): string
+{
+    return bin2hex(random_bytes(16));
+}
+
+function url_absoluta(string $path = '/'): string
+{
+    $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        || (string) ($_SERVER['SERVER_PORT'] ?? '') === '443';
+    $host = $_SERVER['HTTP_HOST'] ?? '127.0.0.1';
+    return ($https ? 'https' : 'http') . '://' . $host . url($path);
+}
+
+function caminho_convite(mixed $caminho): ?string
+{
+    if (!is_string($caminho) || !preg_match('#^/convite/[a-f0-9]{32}$#', $caminho)) {
+        return null;
+    }
+    return $caminho;
+}
+
 function url(string $path = '/'): string
 {
     $path = '/' . ltrim($path, '/');
@@ -475,6 +496,19 @@ function texto_ou_nulo(string $texto, int $max, string $mensagem): ?string
         throw new ValidacaoException($mensagem);
     }
     return $texto;
+}
+
+function validar_senha_campos(string $campoSenha, string $campoConfirmacao): string
+{
+    $senha = campo_raw($campoSenha);
+    $confirmacao = campo_raw($campoConfirmacao);
+    if (strlen($senha) < 6) {
+        throw new ValidacaoException('A senha precisa ter pelo menos 6 caracteres.');
+    }
+    if ($senha !== $confirmacao) {
+        throw new ValidacaoException('A confirmação da senha não confere.');
+    }
+    return password_hash($senha, PASSWORD_DEFAULT);
 }
 
 function validar_nova_senha(bool $obrigatoria): ?string

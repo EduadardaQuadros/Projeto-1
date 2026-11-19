@@ -100,6 +100,7 @@ function turma_ver(string $id): void
     render('turmas/ver', [
         'titulo' => $turma['nome'],
         'turma' => $turma,
+        'link_convite' => garantir_link_convite($turma),
         'horarios' => horarios_da_turma((int) $turma['id']),
         'professores' => $professores,
         'professores_disponiveis' => $disponiveisProf,
@@ -231,4 +232,86 @@ function horarios_da_turma(int $turmaId): array
         'SELECT id, dia_semana, hora_inicio, hora_fim FROM horarios WHERE turma_id = ? ORDER BY dia_semana, hora_inicio',
         [$turmaId]
     );
+}
+
+function turma_renovar_convite(string $id): void
+{
+    require_papel('equipe');
+    renovar_convite((int) $id);
+    flash('ok', 'Novo link gerado. O link anterior deixou de funcionar.');
+    redirect('/turmas/' . (int) $id);
+}
+
+function convite_ver(string $token): void
+{
+    $turma = turma_por_convite($token);
+    if ($turma === null) {
+        nao_encontrado('Este convite não existe ou foi substituído.');
+    }
+    render('convite', dados_convite($turma, null, []));
+}
+
+function convite_entrar(string $token): void
+{
+    $turma = turma_por_convite($token);
+    if ($turma === null) {
+        nao_encontrado('Este convite não existe ou foi substituído.');
+    }
+    $usuario = Auth::usuario();
+    try {
+        if (!(int) $turma['ativa']) {
+            throw new ValidacaoException('Esta turma não está recebendo alunos.');
+        }
+        if ($usuario !== null && $usuario['papel'] === 'aluno') {
+            $aluno = q1('SELECT id FROM alunos WHERE usuario_id = ?', [(int) $usuario['id']]);
+            if ($aluno === null) {
+                throw new ValidacaoException('Cadastro de aluno não encontrado.');
+            }
+            matricular((int) $aluno['id'], (int) $turma['id'], hoje());
+            flash('ok', 'Você entrou na turma.');
+            redirect('/minhas-turmas/' . (int) $turma['id']);
+        }
+        if ($usuario !== null) {
+            throw new ValidacaoException('Saia da conta atual para se cadastrar por este link.');
+        }
+        $usuarioId = cadastrar_aluno_na_turma((int) $turma['id']);
+        $novo = q1('SELECT id, nome, email, papel, ativo FROM usuarios WHERE id = ?', [$usuarioId]);
+        if ($novo === null) {
+            throw new ValidacaoException('Não foi possível concluir o cadastro.');
+        }
+        Auth::entrar($novo);
+        flash('ok', 'Cadastro feito. Você entrou na turma.');
+        redirect('/minhas-turmas/' . (int) $turma['id']);
+    } catch (ValidacaoException $e) {
+        render('convite', dados_convite($turma, $e->getMessage(), $_POST));
+    }
+}
+
+function dados_convite(array $turma, ?string $erro, array $old): array
+{
+    $usuario = Auth::usuario();
+    $jaMatriculado = false;
+    if ($usuario !== null && $usuario['papel'] === 'aluno') {
+        $aluno = q1('SELECT id FROM alunos WHERE usuario_id = ?', [(int) $usuario['id']]);
+        if ($aluno !== null) {
+            $jaMatriculado = q1(
+                "SELECT id FROM matriculas WHERE aluno_id = ? AND turma_id = ? AND situacao = 'ativa'",
+                [(int) $aluno['id'], (int) $turma['id']]
+            ) !== null;
+        }
+    }
+    $total = q1("SELECT COUNT(*) AS n FROM matriculas WHERE turma_id = ? AND situacao = 'ativa'", [(int) $turma['id']]);
+    $ocupadas = (int) $total['n'];
+    $lotada = $turma['capacidade'] !== null && $ocupadas >= (int) $turma['capacidade'];
+
+    return [
+        'titulo' => 'Entrar em ' . $turma['nome'],
+        'turma' => $turma,
+        'horarios' => horarios_da_turma((int) $turma['id']),
+        'erro' => $erro,
+        'old' => $old,
+        'ja_matriculado' => $jaMatriculado,
+        'lotada' => $lotada,
+        'aberta' => (int) $turma['ativa'] === 1 && !$lotada,
+    ];
 }

@@ -17,6 +17,8 @@ function despachar(): void
     }
     $caminho = request_path();
     $rotas = [
+        ['GET', '#^/convite/([a-f0-9]{32})$#', 'convite_ver'],
+        ['POST', '#^/convite/([a-f0-9]{32})$#', 'convite_entrar'],
         ['GET', '#^/login$#', 'tela_login'],
         ['POST', '#^/login$#', 'entrar'],
         ['POST', '#^/sair$#', 'sair'],
@@ -34,6 +36,7 @@ function despachar(): void
         ['POST', '#^/horarios/(\d+)/excluir$#', 'horario_excluir'],
         ['POST', '#^/turmas/(\d+)/professores$#', 'turma_vincular_professor'],
         ['POST', '#^/turmas/(\d+)/professores/(\d+)/remover$#', 'turma_desvincular_professor'],
+        ['POST', '#^/turmas/(\d+)/convite$#', 'turma_renovar_convite'],
         ['POST', '#^/turmas/(\d+)/matriculas$#', 'turma_matricular'],
         ['POST', '#^/matriculas/(\d+)/encerrar$#', 'matricula_encerrar'],
 
