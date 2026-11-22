@@ -7,7 +7,7 @@
     <p class="estado">Envie este link para o aluno se cadastrar e entrar nesta turma.</p>
     <label for="link-convite">Endereço</label>
     <input id="link-convite" readonly value="<?= e($link_convite) ?>">
-    <div class="linha-acoes">
+    <div class="linha-acoes convite-acoes">
         <button class="btn btn-secundario btn-linha" id="copiar-convite" type="button">Copiar link</button>
     </div>
     <p id="aviso-copiado" class="flash flash-ok" role="status" hidden>Link copiado</p>
@@ -105,7 +105,7 @@
                     <span>
                         <a href="<?= e(url('/alunos/' . $matricula['aluno_id'])) ?>"><?= e($matricula['nome']) ?></a>
                         <?php if (eh_menor($matricula['data_nascimento'])): ?><span class="selo">Menor</span><?php endif; ?>
-                        <small><?= e(formatar_data($matricula['data_inicio'])) ?></small>
+                        <small><?= e(formatar_data($matricula['data_inicio'])) ?> · <?= $matricula['plano_nome'] ? e($matricula['plano_nome']) : 'Sem mensalidade' ?></small>
                     </span>
                     <form method="post" action="<?= e(url('/matriculas/' . $matricula['id'] . '/encerrar')) ?>" onsubmit="return confirm('Encerrar esta matrícula?');">
                         <?= csrf_field() ?>
@@ -132,6 +132,20 @@
         </form>
     <?php elseif (!(int) $turma['ativa']): ?>
         <p class="vazio">Reative a turma para matricular alunos.</p>
+    <?php endif; ?>
+    <?php if ($matriculas !== [] && $planos !== []): ?>
+        <h2>Mensalidade da matrícula</h2>
+        <p class="estado">O plano é da pessoa e vale em todas as turmas. Sozinho, não há desconto de família.</p>
+        <?php parte('conta_form', [
+            'acao' => '/turmas/' . $turma['id'] . '/conta',
+            'planos' => $planos,
+            'pagadores' => $pagadores,
+            'conta' => null,
+            'alunos_opcoes' => $alunos_conta,
+            'permitir_proprio' => true,
+            'rotulo_pagador' => 'Quem paga',
+            'filtrar_pagador' => true,
+        ]); ?>
     <?php endif; ?>
     <?php if ($encerradas !== []): ?>
         <h2>Matrículas encerradas</h2>

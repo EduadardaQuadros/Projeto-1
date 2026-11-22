@@ -8,6 +8,7 @@ require __DIR__ . '/controllers/alunos.php';
 require __DIR__ . '/controllers/professores.php';
 require __DIR__ . '/controllers/responsaveis.php';
 require __DIR__ . '/controllers/portal.php';
+require __DIR__ . '/controllers/mensalidades.php';
 
 function despachar(): void
 {
@@ -37,6 +38,7 @@ function despachar(): void
         ['POST', '#^/turmas/(\d+)/professores$#', 'turma_vincular_professor'],
         ['POST', '#^/turmas/(\d+)/professores/(\d+)/remover$#', 'turma_desvincular_professor'],
         ['POST', '#^/turmas/(\d+)/convite$#', 'turma_renovar_convite'],
+        ['POST', '#^/turmas/(\d+)/conta$#', 'turma_salvar_conta'],
         ['POST', '#^/turmas/(\d+)/matriculas$#', 'turma_matricular'],
         ['POST', '#^/matriculas/(\d+)/encerrar$#', 'matricula_encerrar'],
 
@@ -51,6 +53,7 @@ function despachar(): void
         ['POST', '#^/alunos/(\d+)/matriculas$#', 'aluno_matricular'],
         ['POST', '#^/alunos/(\d+)/senha$#', 'aluno_senha'],
         ['POST', '#^/alunos/(\d+)/ativo$#', 'aluno_ativo'],
+        ['POST', '#^/alunos/(\d+)/conta$#', 'aluno_salvar_conta'],
 
         ['GET', '#^/professores$#', 'professores_listar'],
         ['GET', '#^/professores/novo$#', 'professor_novo'],
@@ -73,6 +76,24 @@ function despachar(): void
         ['POST', '#^/responsaveis/(\d+)/alunos/(\d+)/remover$#', 'responsavel_desvincular_aluno'],
         ['POST', '#^/responsaveis/(\d+)/senha$#', 'responsavel_senha'],
         ['POST', '#^/responsaveis/(\d+)/ativo$#', 'responsavel_ativo'],
+        ['POST', '#^/responsaveis/(\d+)/aluno$#', 'responsavel_virar_aluno'],
+        ['POST', '#^/responsaveis/(\d+)/mensalidades$#', 'responsavel_salvar_familia'],
+
+        ['GET', '#^/mensalidades$#', 'mensalidades_contas'],
+        ['GET', '#^/mensalidades/planos$#', 'planos_listar'],
+        ['GET', '#^/mensalidades/planos/novo$#', 'plano_novo'],
+        ['POST', '#^/mensalidades/planos$#', 'plano_criar'],
+        ['GET', '#^/mensalidades/planos/(\d+)/editar$#', 'plano_editar'],
+        ['POST', '#^/mensalidades/planos/(\d+)$#', 'plano_salvar'],
+        ['POST', '#^/mensalidades/planos/(\d+)/ativo$#', 'plano_ativo'],
+        ['GET', '#^/mensalidades/descontos$#', 'descontos_ver'],
+        ['POST', '#^/mensalidades/descontos$#', 'desconto_criar'],
+        ['POST', '#^/mensalidades/descontos/(\d+)$#', 'desconto_salvar'],
+        ['POST', '#^/mensalidades/descontos/(\d+)/excluir$#', 'desconto_excluir'],
+        ['POST', '#^/mensalidades/pagadores/(\d+)/desconto$#', 'pagador_desconto'],
+        ['GET', '#^/mensalidades/mes$#', 'mensalidades_mes'],
+        ['POST', '#^/mensalidades/mes$#', 'mensalidades_gerar'],
+        ['POST', '#^/cobrancas/(\d+)/situacao$#', 'cobranca_situacao'],
 
         ['GET', '#^/filhos/(\d+)$#', 'filho_ver'],
         ['GET', '#^/minhas-turmas/(\d+)$#', 'minha_turma'],

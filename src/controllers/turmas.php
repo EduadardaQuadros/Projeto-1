@@ -71,9 +71,11 @@ function turma_ver(string $id): void
         [$turma['id']]
     );
     $matriculas = q(
-        "SELECT m.id, m.data_inicio, a.id AS aluno_id, a.nome, a.data_nascimento
+        "SELECT m.id, m.data_inicio, a.id AS aluno_id, a.nome, a.data_nascimento, p.nome AS plano_nome
          FROM matriculas m
          JOIN alunos a ON a.id = m.aluno_id
+         LEFT JOIN contas_aluno ca ON ca.aluno_id = a.id
+         LEFT JOIN planos p ON p.id = ca.plano_id
          WHERE m.turma_id = ? AND m.situacao = 'ativa'
          ORDER BY a.nome",
         [$turma['id']]
@@ -97,6 +99,23 @@ function turma_ver(string $id): void
          ORDER BY a.nome",
         [$turma['id']]
     );
+    $opcoesConta = [];
+    $pagadores = [];
+    foreach ($matriculas as $matricula) {
+        $menor = eh_menor((string) $matricula['data_nascimento']);
+        $daPessoa = pagadores_do_aluno((int) $matricula['aluno_id'], $menor);
+        $ids = [];
+        foreach ($daPessoa as $pagador) {
+            $ids[] = (int) $pagador['id'];
+            $pagadores[(int) $pagador['id']] = $pagador;
+        }
+        $opcoesConta[] = [
+            'id' => (int) $matricula['aluno_id'],
+            'nome' => $matricula['nome'],
+            'menor' => $menor,
+            'pagadores' => $ids,
+        ];
+    }
     render('turmas/ver', [
         'titulo' => $turma['nome'],
         'turma' => $turma,
@@ -107,6 +126,9 @@ function turma_ver(string $id): void
         'matriculas' => $matriculas,
         'encerradas' => $encerradas,
         'alunos_disponiveis' => $disponiveisAlunos,
+        'planos' => planos_para_escolha(null),
+        'pagadores' => array_values($pagadores),
+        'alunos_conta' => $opcoesConta,
     ]);
 }
 

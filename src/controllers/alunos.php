@@ -75,7 +75,7 @@ function aluno_vincular_responsavel(string $id): void
     $alunoId = (int) $id;
     try {
         vincular_responsavel($alunoId, campo_int('responsavel_id'), campo('parentesco'));
-        flash('ok', 'Responsável vinculado.');
+        flash('ok', campo('parentesco') === 'familiar' ? 'Familiar vinculado.' : 'Responsável vinculado.');
     } catch (ValidacaoException $e) {
         flash('erro', $e->getMessage());
     }
@@ -86,8 +86,9 @@ function aluno_desvincular_responsavel(string $alunoId, string $responsavelId): 
 {
     require_papel('equipe');
     try {
+        $aluno = buscar_aluno((int) $alunoId);
         desvincular_responsavel((int) $alunoId, (int) $responsavelId);
-        flash('ok', 'Responsável desvinculado.');
+        flash('ok', eh_menor($aluno['data_nascimento']) ? 'Responsável desvinculado.' : 'Familiar desvinculado.');
     } catch (ValidacaoException $e) {
         flash('erro', $e->getMessage());
     }
@@ -164,6 +165,8 @@ function buscar_aluno(int $id): array
 function dados_aluno(array $aluno): array
 {
     $id = (int) $aluno['id'];
+    $conta = conta_do_aluno($id);
+    $menor = eh_menor($aluno['data_nascimento']);
     return [
         'titulo' => $aluno['nome'],
         'aluno' => $aluno,
@@ -186,9 +189,11 @@ function dados_aluno(array $aluno): array
             [$id]
         ),
         'matriculas' => q(
-            "SELECT m.id, m.data_inicio, t.id AS turma_id, t.nome, t.ativa
+            "SELECT m.id, m.data_inicio, t.id AS turma_id, t.nome, t.ativa, p.nome AS plano_nome
              FROM matriculas m
              JOIN turmas t ON t.id = m.turma_id
+             LEFT JOIN contas_aluno ca ON ca.aluno_id = m.aluno_id
+             LEFT JOIN planos p ON p.id = ca.plano_id
              WHERE m.aluno_id = ? AND m.situacao = 'ativa'
              ORDER BY t.nome",
             [$id]
@@ -203,5 +208,10 @@ function dados_aluno(array $aluno): array
              ORDER BY t.nome",
             [$id]
         ),
+        'conta' => $conta,
+        'resumo' => resumo_conta_aluno($id),
+        'planos' => planos_para_escolha($conta === null ? null : (int) $conta['plano_id']),
+        'pagadores' => pagadores_do_aluno($id, $menor),
+        'menor' => $menor,
     ];
 }

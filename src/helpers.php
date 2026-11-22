@@ -24,6 +24,14 @@ const PARENTESCOS = [
     'outro' => 'Outro',
 ];
 
+function rotulo_parentesco(string $parentesco): string
+{
+    if ($parentesco === 'familiar') {
+        return 'Familiar';
+    }
+    return PARENTESCOS[$parentesco] ?? '';
+}
+
 final class ValidacaoException extends RuntimeException
 {
 }
@@ -304,6 +312,151 @@ function papel_label(string $papel): string
 function hoje(): string
 {
     return (new DateTimeImmutable('today'))->format('Y-m-d');
+}
+
+function mes_atual(): string
+{
+    return (new DateTimeImmutable('today'))->format('Y-m-01');
+}
+
+function somar_meses(string $data, int $meses): string
+{
+    $base = DateTimeImmutable::createFromFormat('!Y-m-d', substr($data, 0, 10));
+    if (!$base instanceof DateTimeImmutable) {
+        return substr($data, 0, 10);
+    }
+    return $base->modify(($meses < 0 ? '' : '+') . $meses . ' months')->format('Y-m-d');
+}
+
+function percentual_inicial_vigente(?string $percentual, ?int $meses, ?string $desde, string $competencia): string
+{
+    if ($percentual === null || $percentual === '' || (float) $percentual <= 0 || $meses === null || $meses < 1 || $desde === null || $desde === '') {
+        return '0.00';
+    }
+    $inicio = substr($desde, 0, 7);
+    $mes = substr($competencia, 0, 7);
+    $diff = ((int) substr($mes, 0, 4) - (int) substr($inicio, 0, 4)) * 12
+        + ((int) substr($mes, 5, 2) - (int) substr($inicio, 5, 2));
+    if ($diff < 0 || $diff >= $meses) {
+        return '0.00';
+    }
+    return number_format((float) $percentual, 2, '.', '');
+}
+
+function fim_desconto_inicial(string $desde, int $meses): string
+{
+    return somar_meses(substr($desde, 0, 7) . '-01', max(0, $meses - 1));
+}
+
+function competencia_de_texto(string $valor): string
+{
+    $valor = trim($valor);
+    if (preg_match('/^(\d{4})-(\d{2})$/', $valor, $m)) {
+        $valor = $m[1] . '-' . $m[2] . '-01';
+    }
+    if (!data_valida($valor) || substr($valor, 8, 2) !== '01') {
+        throw new ValidacaoException('Escolha o mês.');
+    }
+    return $valor;
+}
+
+function formatar_mes(string $competencia): string
+{
+    $data = DateTimeImmutable::createFromFormat('!Y-m-d', substr($competencia, 0, 10));
+    if (!$data instanceof DateTimeImmutable) {
+        return $competencia;
+    }
+    $meses = [
+        1 => 'janeiro',
+        2 => 'fevereiro',
+        3 => 'março',
+        4 => 'abril',
+        5 => 'maio',
+        6 => 'junho',
+        7 => 'julho',
+        8 => 'agosto',
+        9 => 'setembro',
+        10 => 'outubro',
+        11 => 'novembro',
+        12 => 'dezembro',
+    ];
+    return ($meses[(int) $data->format('n')] ?? $data->format('m')) . ' de ' . $data->format('Y');
+}
+
+function formatar_centavos(int $centavos): string
+{
+    $negativo = $centavos < 0;
+    $centavos = abs($centavos);
+    $reais = number_format(intdiv($centavos, 100), 0, '', '.');
+    return ($negativo ? '-' : '') . 'R$ ' . $reais . ',' . sprintf('%02d', $centavos % 100);
+}
+
+function texto_centavos(int $centavos): string
+{
+    return intdiv($centavos, 100) . ',' . sprintf('%02d', $centavos % 100);
+}
+
+function centavos_de_texto(string $valor): int
+{
+    $valor = trim(str_replace(['R$', ' '], '', $valor));
+    if (!preg_match('/^\d{1,6}(?:[.,]\d{1,2})?$/', $valor)) {
+        throw new ValidacaoException('Informe o valor da mensalidade.');
+    }
+    [$inteiro, $fracao] = array_pad(explode('.', str_replace(',', '.', $valor), 2), 2, '0');
+    $fracao = str_pad(substr($fracao, 0, 2), 2, '0');
+    return ((int) $inteiro) * 100 + (int) $fracao;
+}
+
+function formatar_percentual(string|float|null $valor): string
+{
+    if ($valor === null || $valor === '') {
+        return '0%';
+    }
+    $texto = number_format((float) $valor, 2, ',', '');
+    $texto = rtrim(rtrim($texto, '0'), ',');
+    return ($texto === '' ? '0' : $texto) . '%';
+}
+
+function percentual_ou_nulo(string $valor): ?string
+{
+    $valor = trim(str_replace('%', '', $valor));
+    $valor = str_replace(',', '.', $valor);
+    if ($valor === '') {
+        return null;
+    }
+    if (!preg_match('/^\d{1,3}(?:\.\d{1,2})?$/', $valor) || (float) $valor > 100) {
+        throw new ValidacaoException('Informe o percentual de 0 a 100.');
+    }
+    return number_format((float) $valor, 2, '.', '');
+}
+
+function basis_percentual(string $percentual): int
+{
+    $percentual = str_replace(',', '.', trim($percentual));
+    if (!preg_match('/^(\d{1,3})(?:\.(\d{1,2}))?$/', $percentual, $partes)) {
+        return 0;
+    }
+    $fracao = str_pad($partes[2] ?? '', 2, '0');
+    return min(10000, ((int) $partes[1]) * 100 + (int) $fracao);
+}
+
+function aplicar_desconto_centavos(int $centavos, string $percentual): int
+{
+    $basis = basis_percentual($percentual);
+    if ($basis <= 0) {
+        return $centavos;
+    }
+    if ($basis >= 10000) {
+        return 0;
+    }
+    return intdiv($centavos * (10000 - $basis) + 5000, 10000);
+}
+
+function valor_com_descontos(int $cheio, string $inicial, string $familia, string $extra): int
+{
+    $aposInicial = aplicar_desconto_centavos($cheio, $inicial);
+    $aposFamilia = aplicar_desconto_centavos($aposInicial, $familia);
+    return aplicar_desconto_centavos($aposFamilia, $extra);
 }
 
 function data_valida(string $data): bool

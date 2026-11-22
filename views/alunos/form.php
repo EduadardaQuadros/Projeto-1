@@ -31,23 +31,36 @@ $acao = $aluno === null ? url('/alunos') : url('/alunos/' . $aluno['id']);
         <input id="senha" name="senha" type="password" autocomplete="new-password" required minlength="6">
         <label for="senha_confirmacao">Confirmar senha</label>
         <input id="senha_confirmacao" name="senha_confirmacao" type="password" autocomplete="new-password" required minlength="6">
-        <label for="responsavel_id">Responsável</label>
-        <select id="responsavel_id" name="responsavel_id">
-            <option value="">Nenhum</option>
-            <?php foreach ($responsaveis as $responsavel): ?>
-                <option value="<?= (int) $responsavel['id'] ?>"<?= $responsavelId === (string) $responsavel['id'] ? ' selected' : '' ?>><?= e($responsavel['nome']) ?></option>
-            <?php endforeach; ?>
-        </select>
-        <?php if ($responsaveis === []): ?>
-            <p class="vazio">Nenhum responsável cadastrado. <a href="<?= e(url('/responsaveis/novo')) ?>">Cadastrar responsável</a></p>
-        <?php endif; ?>
-        <label for="parentesco">Parentesco</label>
-        <select id="parentesco" name="parentesco">
-            <option value="">Selecione</option>
-            <?php foreach (PARENTESCOS as $valor => $rotulo): ?>
-                <option value="<?= e($valor) ?>"<?= $parentesco === $valor ? ' selected' : '' ?>><?= e($rotulo) ?></option>
-            <?php endforeach; ?>
-        </select>
+        <div id="bloco-responsavel" hidden>
+            <label for="responsavel_id">Responsável</label>
+            <select id="responsavel_id" name="responsavel_id">
+                <option value="">Nenhum</option>
+                <?php foreach ($responsaveis as $responsavel): ?>
+                    <option value="<?= (int) $responsavel['id'] ?>"<?= $responsavelId === (string) $responsavel['id'] ? ' selected' : '' ?>><?= e($responsavel['nome']) ?></option>
+                <?php endforeach; ?>
+            </select>
+            <?php if ($responsaveis === []): ?>
+                <p class="vazio">Nenhum responsável cadastrado. <a href="<?= e(url('/responsaveis/novo')) ?>">Cadastrar responsável</a></p>
+            <?php endif; ?>
+            <label for="parentesco">Parentesco</label>
+            <select id="parentesco" name="parentesco">
+                <option value="">Selecione</option>
+                <?php foreach (PARENTESCOS as $valor => $rotulo): ?>
+                    <option value="<?= e($valor) ?>"<?= $parentesco === $valor ? ' selected' : '' ?>><?= e($rotulo) ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <div id="bloco-familiar" hidden>
+            <p class="estado">Adulto não recebe responsável. Um familiar serve para um adulto pagar a mensalidade de outro.</p>
+            <label for="familiar_id">Familiar</label>
+            <select id="familiar_id" name="responsavel_id">
+                <option value="">Nenhum</option>
+                <?php foreach ($responsaveis as $responsavel): ?>
+                    <option value="<?= (int) $responsavel['id'] ?>"<?= $responsavelId === (string) $responsavel['id'] ? ' selected' : '' ?>><?= e($responsavel['nome']) ?></option>
+                <?php endforeach; ?>
+            </select>
+            <input id="parentesco_familiar" type="hidden" name="parentesco" value="familiar">
+        </div>
     <?php endif; ?>
     <button class="btn" type="submit">Salvar</button>
 </form>

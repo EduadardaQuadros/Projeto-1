@@ -16,4 +16,23 @@
         <span class="numero"><?= (int) $contagens['responsaveis'] ?></span>
         <span>Responsáveis</span>
     </a>
+    <a class="cartao cartao-link" href="<?= e(url('/mensalidades')) ?>">
+        <span class="numero"><?= (int) $contagens['sem_conta'] ?></span>
+        <span>Atletas sem mensalidade</span>
+    </a>
 </div>
+<?php if ($avisos !== []): ?>
+    <section class="bloco">
+        <h2>Desconto inicial acabando</h2>
+        <ul class="itens">
+            <?php foreach ($avisos as $aviso): ?>
+                <li>
+                    <span>
+                        <a href="<?= e(url('/alunos/' . $aviso['aluno_id'])) ?>"><?= e($aviso['aluno_nome']) ?></a>
+                        <small><?= e($aviso['plano_nome']) ?> · <?= e(formatar_percentual($aviso['percentual'])) ?> acaba em <?= e(formatar_mes($aviso['acaba_em'])) ?>. No mês seguinte o valor volta ao normal.</small>
+                    </span>
+                </li>
+            <?php endforeach; ?>
+        </ul>
+    </section>
+<?php endif; ?>

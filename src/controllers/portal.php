@@ -13,23 +13,35 @@ function inicio(): void
                 'professores' => (int) q1('SELECT COUNT(*) AS n FROM professores')['n'],
                 'alunos' => (int) q1('SELECT COUNT(*) AS n FROM alunos')['n'],
                 'responsaveis' => (int) q1('SELECT COUNT(*) AS n FROM responsaveis')['n'],
+                'sem_conta' => count(alunos_sem_conta()),
             ],
+            'avisos' => avisos_desconto_inicial(),
         ]);
         return;
     }
-    if ($usuario['papel'] === 'responsavel') {
-        $filhos = q(
-            'SELECT a.id, a.nome, a.data_nascimento, ar.parentesco
-             FROM alunos a
-             JOIN aluno_responsavel ar ON ar.aluno_id = a.id
-             JOIN responsaveis r ON r.id = ar.responsavel_id
-             WHERE r.usuario_id = ?
-             ORDER BY a.nome',
-            [(int) $usuario['id']]
-        );
+    if ($usuario['papel'] === 'professor') {
+        render('inicio_turmas', [
+            'titulo' => 'Minhas turmas',
+            'turmas' => turmas_do_usuario($usuario),
+            'papel' => $usuario['papel'],
+        ]);
+        return;
+    }
+    $usuarioId = (int) $usuario['id'];
+    $aluno = perfil_aluno($usuarioId);
+    $responsavel = perfil_responsavel($usuarioId);
+    if ($aluno !== null && $responsavel !== null) {
+        render('inicio_pessoa', [
+            'titulo' => 'Início',
+            'turmas' => turmas_do_usuario(['id' => $usuarioId, 'papel' => 'aluno']),
+            'filhos' => filhos_do_usuario($usuarioId),
+        ]);
+        return;
+    }
+    if ($responsavel !== null) {
         render('inicio_responsavel', [
             'titulo' => 'Meus filhos',
-            'filhos' => $filhos,
+            'filhos' => filhos_do_usuario($usuarioId),
         ]);
         return;
     }
@@ -40,9 +52,25 @@ function inicio(): void
     ]);
 }
 
+function filhos_do_usuario(int $usuarioId): array
+{
+    return q(
+        'SELECT a.id, a.nome, a.data_nascimento, ar.parentesco
+         FROM alunos a
+         JOIN aluno_responsavel ar ON ar.aluno_id = a.id
+         JOIN responsaveis r ON r.id = ar.responsavel_id
+         WHERE r.usuario_id = ?
+         ORDER BY a.nome',
+        [$usuarioId]
+    );
+}
+
 function filho_ver(string $id): void
 {
-    $usuario = require_papel('responsavel');
+    $usuario = require_login();
+    if (perfil_responsavel((int) $usuario['id']) === null) {
+        recusar('Você não pode ver este aluno.');
+    }
     $filho = q1(
         'SELECT a.id, a.nome, a.data_nascimento
          FROM alunos a
@@ -108,7 +136,7 @@ function minha_turma(string $id): void
         ]);
         return;
     }
-    if ($usuario['papel'] === 'aluno') {
+    if ($usuario['papel'] !== 'equipe' && perfil_aluno((int) $usuario['id']) !== null) {
         $turma = q1(
             "SELECT t.id, t.nome, t.nivel, t.local
              FROM turmas t

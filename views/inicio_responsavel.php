@@ -6,7 +6,7 @@
         <?php foreach ($filhos as $filho): ?>
             <a class="cartao cartao-link" href="<?= e(url('/filhos/' . $filho['id'])) ?>">
                 <strong><?= e($filho['nome']) ?></strong>
-                <span><?= (int) idade($filho['data_nascimento']) ?> anos · <?= e(PARENTESCOS[$filho['parentesco']] ?? '') ?></span>
+                <span><?= (int) idade($filho['data_nascimento']) ?> anos · <?= e(rotulo_parentesco((string) $filho['parentesco'])) ?></span>
                 <?php if (eh_menor($filho['data_nascimento'])): ?>
                     <span class="selo">Menor</span>
                 <?php endif; ?>

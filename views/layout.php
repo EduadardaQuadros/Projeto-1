@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#12355b">
     <title><?= e($titulo) ?> · Escola de Vôlei</title>
-    <link rel="stylesheet" href="<?= e(url('/assets/css/app.css')) ?>">
+    <link rel="stylesheet" href="<?= e(url('/assets/css/app.css')) ?>?v=<?= (int) @filemtime(__DIR__ . '/../assets/css/app.css') ?>">
 </head>
 <body class="<?= !empty($publico) ? 'publico' : 'app' ?>">
 <?php if (!empty($publico)): ?>
@@ -24,7 +24,7 @@
                 <?php if ($usuario['papel'] === 'equipe'): ?>
                     <a class="link-topo" href="<?= e(url('/senha')) ?>">Senha</a>
                 <?php endif; ?>
-                <form method="post" action="<?= e(url('/sair')) ?>">
+                <form class="topo-sair" method="post" action="<?= e(url('/sair')) ?>">
                     <?= csrf_field() ?>
                     <button class="link-topo botao-link" type="submit">Sair</button>
                 </form>
@@ -41,7 +41,7 @@
         <nav class="nav" aria-label="Principal">
             <?php
             $itens = $usuario['papel'] === 'equipe'
-                ? [['/', 'Início'], ['/turmas', 'Turmas'], ['/alunos', 'Alunos'], ['/professores', 'Professores'], ['/responsaveis', 'Responsáveis']]
+                ? [['/', 'Início'], ['/turmas', 'Turmas'], ['/alunos', 'Alunos'], ['/professores', 'Professores'], ['/responsaveis', 'Responsáveis'], ['/mensalidades', 'Mensalidades']]
                 : [['/', 'Início'], ['/senha', 'Senha']];
             foreach ($itens as [$href, $rotulo]):
             ?>

@@ -53,6 +53,10 @@ function responsavel_ver(string $id): void
     render('responsaveis/ver', [
         'titulo' => $responsavel['nome'],
         'responsavel' => $responsavel,
+        'aluno_perfil' => perfil_aluno((int) $responsavel['usuario_id']),
+        'pagos' => atletas_do_pagador((int) $responsavel['id']),
+        'familia' => familia_para_cobranca((int) $responsavel['id']),
+        'planos' => planos_todos(),
         'alunos' => q(
             'SELECT a.id, a.nome, a.data_nascimento, ar.parentesco
              FROM aluno_responsavel ar
@@ -62,7 +66,7 @@ function responsavel_ver(string $id): void
             [$responsavel['id']]
         ),
         'alunos_disponiveis' => q(
-            'SELECT a.id, a.nome
+            'SELECT a.id, a.nome, a.data_nascimento
              FROM alunos a
              WHERE a.id NOT IN (SELECT aluno_id FROM aluno_responsavel WHERE responsavel_id = ?)
              ORDER BY a.nome',
