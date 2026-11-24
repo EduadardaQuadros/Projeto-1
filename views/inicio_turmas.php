@@ -1,4 +1,7 @@
 <h1>Minhas turmas</h1>
+<?php if ($papel !== 'professor'): ?>
+    <p><a class="btn btn-linha" href="<?= e(url('/pagamentos')) ?>">Pagamentos</a></p>
+<?php endif; ?>
 <?php if ($turmas === []): ?>
     <p class="vazio"><?= $papel === 'professor' ? 'Você ainda não está em nenhuma turma ativa.' : 'Você não tem matrícula ativa.' ?></p>
 <?php else: ?>

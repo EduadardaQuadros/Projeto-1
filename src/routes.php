@@ -9,6 +9,7 @@ require __DIR__ . '/controllers/professores.php';
 require __DIR__ . '/controllers/responsaveis.php';
 require __DIR__ . '/controllers/portal.php';
 require __DIR__ . '/controllers/mensalidades.php';
+require __DIR__ . '/controllers/pagamentos.php';
 
 function despachar(): void
 {
@@ -86,6 +87,7 @@ function despachar(): void
         ['GET', '#^/mensalidades/planos/(\d+)/editar$#', 'plano_editar'],
         ['POST', '#^/mensalidades/planos/(\d+)$#', 'plano_salvar'],
         ['POST', '#^/mensalidades/planos/(\d+)/ativo$#', 'plano_ativo'],
+        ['POST', '#^/mensalidades/planos/(\d+)/excluir$#', 'plano_excluir'],
         ['GET', '#^/mensalidades/descontos$#', 'descontos_ver'],
         ['POST', '#^/mensalidades/descontos$#', 'desconto_criar'],
         ['POST', '#^/mensalidades/descontos/(\d+)$#', 'desconto_salvar'],
@@ -94,6 +96,9 @@ function despachar(): void
         ['GET', '#^/mensalidades/mes$#', 'mensalidades_mes'],
         ['POST', '#^/mensalidades/mes$#', 'mensalidades_gerar'],
         ['POST', '#^/cobrancas/(\d+)/situacao$#', 'cobranca_situacao'],
+
+        ['GET', '#^/pagamentos$#', 'pagamentos_ver'],
+        ['POST', '#^/pagamentos$#', 'pagamentos_preparar'],
 
         ['GET', '#^/filhos/(\d+)$#', 'filho_ver'],
         ['GET', '#^/minhas-turmas/(\d+)$#', 'minha_turma'],

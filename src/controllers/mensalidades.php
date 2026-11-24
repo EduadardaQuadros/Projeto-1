@@ -68,6 +68,18 @@ function plano_ativo(string $id): void
     redirect('/mensalidades/planos');
 }
 
+function plano_excluir(string $id): void
+{
+    require_papel('equipe');
+    try {
+        excluir_plano((int) $id);
+        flash('ok', 'Plano excluído.');
+    } catch (ValidacaoException $e) {
+        flash('erro', $e->getMessage());
+    }
+    redirect('/mensalidades/planos');
+}
+
 function descontos_ver(): void
 {
     require_papel('equipe');

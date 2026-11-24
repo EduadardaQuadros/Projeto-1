@@ -37,6 +37,10 @@
                         <input type="hidden" name="ativo" value="<?= (int) $plano['ativo'] ? '0' : '1' ?>">
                         <button class="btn-perigo" type="submit"><?= (int) $plano['ativo'] ? 'Desativar' : 'Reativar' ?></button>
                     </form>
+                    <form method="post" action="<?= e(url('/mensalidades/planos/' . $plano['id'] . '/excluir')) ?>" onsubmit="return confirm('Excluir este plano?');">
+                        <?= csrf_field() ?>
+                        <button class="btn-perigo" type="submit">Excluir</button>
+                    </form>
                 </div>
             </article>
         <?php endforeach; ?>

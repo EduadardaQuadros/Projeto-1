@@ -125,4 +125,26 @@
             }
         });
     }
+    var prazos = document.querySelectorAll('.ate-pagamento');
+    var totalPagamento = document.querySelector('#total-pagamento');
+    if (prazos.length && totalPagamento) {
+        var textoCentavos = function (centavos) {
+            var inteiro = Math.floor(centavos / 100);
+            var fracao = String(centavos % 100).padStart(2, '0');
+            var texto = String(inteiro).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+            return 'R$ ' + texto + ',' + fracao;
+        };
+        var atualizarTotal = function () {
+            var soma = 0;
+            Array.prototype.forEach.call(prazos, function (campo) {
+                var opcao = campo.options[campo.selectedIndex];
+                soma += opcao ? (parseInt(opcao.getAttribute('data-centavos'), 10) || 0) : 0;
+            });
+            totalPagamento.textContent = textoCentavos(soma);
+        };
+        Array.prototype.forEach.call(prazos, function (campo) {
+            campo.addEventListener('change', atualizarTotal);
+        });
+        atualizarTotal();
+    }
 })();

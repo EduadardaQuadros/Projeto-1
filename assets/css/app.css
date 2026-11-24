@@ -362,7 +362,7 @@ input:focus, select:focus {
 .itens form { margin: 0; }
 
 .aviso {
-    margin: 0;
+    margin: 0 0 10px;
     padding: 10px 12px;
     border-radius: 12px;
     background: var(--selo-bg);
@@ -414,6 +414,31 @@ input:focus, select:focus {
 .familia-pessoa legend {
     padding: 0 6px;
     font-weight: 800;
+}
+
+.parcelas {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 14px;
+}
+
+.parcelas li {
+    padding-top: 12px;
+    border-top: 1px solid var(--line);
+}
+
+.parcelas p { margin: 4px 0 0; }
+
+.pagar-ate {
+    display: grid;
+    gap: 6px;
+    margin-top: 16px;
+}
+
+.pagamento-base {
+    border: 1px dashed var(--navy);
 }
 
 .total-conta {

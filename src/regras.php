@@ -842,6 +842,24 @@ function definir_plano_ativo(int $id, int $ativo): void
     exec_sql('UPDATE planos SET ativo = ? WHERE id = ?', [$ativo ? 1 : 0, $id]);
 }
 
+function excluir_plano(int $id): void
+{
+    if (q1('SELECT id FROM planos WHERE id = ?', [$id]) === null) {
+        nao_encontrado('Plano não encontrado.');
+    }
+    $uso = q1(
+        'SELECT 1 AS ok FROM contas_aluno WHERE plano_id = ?
+         UNION
+         SELECT 1 FROM cobrancas WHERE plano_id = ?
+         LIMIT 1',
+        [$id, $id]
+    );
+    if ($uso !== null) {
+        throw new ValidacaoException('Este plano está em uma conta ou em uma cobrança. Troque o plano dessas pessoas, ou desative este.');
+    }
+    exec_sql('DELETE FROM planos WHERE id = ?', [$id]);
+}
+
 function dados_faixa(): array
 {
     $minimo = campo_int('minimo_atletas');
@@ -1323,4 +1341,205 @@ function definir_situacao_cobranca(int $id, string $situacao): string
         throw new ValidacaoException('Situação inválida.');
     }
     return (string) $cobranca['competencia'];
+}
+
+function atletas_do_usuario_pagamento(int $usuarioId): array
+{
+    $ids = [];
+    $aluno = q1('SELECT id FROM alunos WHERE usuario_id = ?', [$usuarioId]);
+    if ($aluno !== null) {
+        $ids[] = (int) $aluno['id'];
+    }
+    $pagos = q(
+        'SELECT ca.aluno_id
+         FROM contas_aluno ca
+         JOIN responsaveis r ON r.id = ca.pagador_id
+         WHERE r.usuario_id = ?',
+        [$usuarioId]
+    );
+    foreach ($pagos as $pago) {
+        $ids[] = (int) $pago['aluno_id'];
+    }
+    $ids = array_values(array_unique($ids));
+    if ($ids === []) {
+        return [];
+    }
+    $marcas = implode(',', array_fill(0, count($ids), '?'));
+    return q(
+        "SELECT a.id, a.nome,
+                EXISTS (
+                    SELECT 1 FROM matriculas m
+                    WHERE m.aluno_id = a.id AND m.situacao = 'ativa'
+                ) AS matriculado
+         FROM alunos a
+         WHERE a.id IN ({$marcas})
+         ORDER BY a.nome",
+        $ids
+    );
+}
+
+function painel_pagamentos(int $usuarioId): array
+{
+    $atletas = atletas_do_usuario_pagamento($usuarioId);
+    if ($atletas === []) {
+        return ['atletas' => [], 'alertas' => [], 'tem_pagavel' => false];
+    }
+    $ids = array_map(static fn (array $atleta): int => (int) $atleta['id'], $atletas);
+    $marcas = implode(',', array_fill(0, count($ids), '?'));
+    $cobrancas = q(
+        "SELECT c.aluno_id, c.competencia, c.valor_cheio_centavos, c.desconto_inicial,
+                c.desconto_familia, c.desconto_extra, c.valor_final_centavos, c.situacao, c.pago_em,
+                p.nome AS plano_nome
+         FROM cobrancas c
+         JOIN planos p ON p.id = c.plano_id
+         WHERE c.aluno_id IN ({$marcas})
+         ORDER BY c.competencia",
+        $ids
+    );
+    $porAluno = [];
+    foreach ($cobrancas as $cobranca) {
+        $porAluno[(int) $cobranca['aluno_id']][substr((string) $cobranca['competencia'], 0, 10)] = $cobranca;
+    }
+    $faixas = faixas_desconto();
+    $contagens = atletas_ativos_por_pagador();
+    $extras = extras_por_pagador();
+    $atual = mes_atual();
+    $proximo = somar_meses($atual, 1);
+    $grupos = [];
+    $alertas = [];
+    $temPagavel = false;
+    foreach ($atletas as $atleta) {
+        $alunoId = (int) $atleta['id'];
+        $conta = conta_do_aluno($alunoId);
+        $doAluno = $porAluno[$alunoId] ?? [];
+        $fim = somar_meses($atual, 5);
+        $inicio = $atual;
+        foreach ($doAluno as $competencia => $cobranca) {
+            if ($competencia < $inicio) {
+                $inicio = $competencia;
+            }
+            if ($competencia > $fim) {
+                $fim = $competencia;
+            }
+        }
+        $meses = [];
+        $cursor = $inicio;
+        while ($cursor <= $fim) {
+            if (isset($doAluno[$cursor])) {
+                $cobranca = $doAluno[$cursor];
+                $paga = $cobranca['situacao'] === 'paga';
+                $meses[] = [
+                    'chave' => $alunoId . '|' . substr($cursor, 0, 7),
+                    'competencia' => $cursor,
+                    'plano_nome' => (string) $cobranca['plano_nome'],
+                    'cheio' => (int) $cobranca['valor_cheio_centavos'],
+                    'inicial' => number_format((float) $cobranca['desconto_inicial'], 2, '.', ''),
+                    'familia' => number_format((float) $cobranca['desconto_familia'], 2, '.', ''),
+                    'extra' => number_format((float) $cobranca['desconto_extra'], 2, '.', ''),
+                    'final' => (int) $cobranca['valor_final_centavos'],
+                    'situacao' => $paga ? 'paga' : 'aberta',
+                    'pago_em' => $cobranca['pago_em'],
+                    'pagavel' => !$paga,
+                    'prevista' => false,
+                ];
+                $temPagavel = $temPagavel || !$paga;
+            } elseif ($cursor >= $atual && $conta !== null && (int) $atleta['matriculado'] === 1) {
+                $calculo = calcular_mensalidade(
+                    (int) $conta['valor_centavos'],
+                    (int) $conta['pagador_id'],
+                    $contagens,
+                    $faixas,
+                    $extras,
+                    inicial_da_linha($conta, $cursor)
+                );
+                $meses[] = [
+                    'chave' => $alunoId . '|' . substr($cursor, 0, 7),
+                    'competencia' => $cursor,
+                    'plano_nome' => (string) $conta['plano_nome'],
+                    'cheio' => (int) $conta['valor_centavos'],
+                    'inicial' => $calculo['inicial'],
+                    'familia' => $calculo['familia'],
+                    'extra' => $calculo['extra'],
+                    'final' => $calculo['final'],
+                    'situacao' => 'prevista',
+                    'pago_em' => null,
+                    'pagavel' => true,
+                    'prevista' => true,
+                ];
+                $temPagavel = true;
+            }
+            $cursor = somar_meses($cursor, 1);
+        }
+        if ($conta !== null && !empty($conta['desconto_desde']) && !empty($conta['desconto_meses'])) {
+            $vigente = inicial_da_linha($conta, $atual);
+            if ((float) $vigente > 0) {
+                $acaba = fim_desconto_inicial((string) $conta['desconto_desde'], (int) $conta['desconto_meses']);
+                if ($acaba === $atual || $acaba === $proximo) {
+                    $alertas[] = [
+                        'nome' => (string) $atleta['nome'],
+                        'percentual' => $vigente,
+                        'acaba_em' => $acaba,
+                        'mes_que_vem' => $acaba === $proximo,
+                    ];
+                }
+            }
+        }
+        $grupos[] = [
+            'id' => $alunoId,
+            'nome' => (string) $atleta['nome'],
+            'meses' => $meses,
+        ];
+    }
+    return ['atletas' => $grupos, 'alertas' => $alertas, 'tem_pagavel' => $temPagavel];
+}
+
+function preparar_pagamento(int $usuarioId, mixed $ate): array
+{
+    if (!is_array($ate)) {
+        throw new ValidacaoException('Escolha até qual mês pagar.');
+    }
+    $painel = painel_pagamentos($usuarioId);
+    $porAtleta = [];
+    foreach ($painel['atletas'] as $atleta) {
+        $pagaveis = [];
+        foreach ($atleta['meses'] as $mes) {
+            if ($mes['pagavel']) {
+                $mes['aluno_nome'] = $atleta['nome'];
+                $pagaveis[] = $mes;
+            }
+        }
+        $porAtleta[(int) $atleta['id']] = $pagaveis;
+    }
+    $escolhidas = [];
+    foreach ($ate as $alunoId => $chave) {
+        $chave = trim((string) $chave);
+        if ($chave === '') {
+            continue;
+        }
+        $alunoId = (int) $alunoId;
+        if (!isset($porAtleta[$alunoId])) {
+            throw new ValidacaoException('Essa parcela não está disponível.');
+        }
+        $corte = null;
+        foreach ($porAtleta[$alunoId] as $indice => $mes) {
+            if ($mes['chave'] === $chave) {
+                $corte = $indice;
+                break;
+            }
+        }
+        if ($corte === null) {
+            throw new ValidacaoException('Essa parcela não está disponível.');
+        }
+        for ($i = 0; $i <= $corte; $i++) {
+            $escolhidas[] = $porAtleta[$alunoId][$i];
+        }
+    }
+    if ($escolhidas === []) {
+        throw new ValidacaoException('Escolha até qual mês pagar.');
+    }
+    $total = 0;
+    foreach ($escolhidas as $parcela) {
+        $total += (int) $parcela['final'];
+    }
+    return ['parcelas' => $escolhidas, 'total' => $total];
 }

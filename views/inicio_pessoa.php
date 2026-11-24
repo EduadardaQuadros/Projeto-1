@@ -1,4 +1,5 @@
 <h1>Início</h1>
+<p><a class="btn btn-linha" href="<?= e(url('/pagamentos')) ?>">Pagamentos</a></p>
 <section class="bloco">
     <h2>Minhas turmas</h2>
     <?php if ($turmas === []): ?>

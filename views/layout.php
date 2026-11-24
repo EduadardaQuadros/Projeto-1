@@ -40,9 +40,13 @@
     <?php if (!empty($usuario)): ?>
         <nav class="nav" aria-label="Principal">
             <?php
-            $itens = $usuario['papel'] === 'equipe'
-                ? [['/', 'Início'], ['/turmas', 'Turmas'], ['/alunos', 'Alunos'], ['/professores', 'Professores'], ['/responsaveis', 'Responsáveis'], ['/mensalidades', 'Mensalidades']]
-                : [['/', 'Início'], ['/senha', 'Senha']];
+            if ($usuario['papel'] === 'equipe') {
+                $itens = [['/', 'Início'], ['/turmas', 'Turmas'], ['/alunos', 'Alunos'], ['/professores', 'Professores'], ['/responsaveis', 'Responsáveis'], ['/mensalidades', 'Mensalidades']];
+            } elseif ($usuario['papel'] === 'professor') {
+                $itens = [['/', 'Início'], ['/senha', 'Senha']];
+            } else {
+                $itens = [['/', 'Início'], ['/pagamentos', 'Pagamentos'], ['/senha', 'Senha']];
+            }
             foreach ($itens as [$href, $rotulo]):
             ?>
                 <a href="<?= e(url($href)) ?>"<?= nav_ativo($href) ? ' aria-current="page"' : '' ?>><?= e($rotulo) ?></a>
