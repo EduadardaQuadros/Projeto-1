@@ -319,6 +319,32 @@ function mes_atual(): string
     return (new DateTimeImmutable('today'))->format('Y-m-01');
 }
 
+function fim_do_mes(string $competencia): string
+{
+    $base = DateTimeImmutable::createFromFormat('!Y-m-d', substr($competencia, 0, 7) . '-01');
+    if (!$base instanceof DateTimeImmutable) {
+        return substr($competencia, 0, 10);
+    }
+    return $base->modify('last day of this month')->format('Y-m-d');
+}
+
+function prazo_da_parcela(string $competencia, string $situacao): string
+{
+    if ($situacao === 'paga') {
+        return 'paga';
+    }
+    $limite = fim_do_mes($competencia);
+    $hoje = hoje();
+    if ($hoje > $limite) {
+        return 'atrasada';
+    }
+    $comecaAviso = (new DateTimeImmutable($limite))->modify('-6 days')->format('Y-m-d');
+    if ($hoje >= $comecaAviso) {
+        return 'prazo';
+    }
+    return $situacao === 'prevista' ? 'prevista' : 'aberta';
+}
+
 function somar_meses(string $data, int $meses): string
 {
     $base = DateTimeImmutable::createFromFormat('!Y-m-d', substr($data, 0, 10));

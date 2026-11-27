@@ -1441,6 +1441,7 @@ function painel_pagamentos(int $usuarioId): array
                     'pago_em' => $cobranca['pago_em'],
                     'pagavel' => !$paga,
                     'prevista' => false,
+                    'prazo' => prazo_da_parcela($cursor, $paga ? 'paga' : 'aberta'),
                 ];
                 $temPagavel = $temPagavel || !$paga;
             } elseif ($cursor >= $atual && $conta !== null && (int) $atleta['matriculado'] === 1) {
@@ -1465,6 +1466,7 @@ function painel_pagamentos(int $usuarioId): array
                     'pago_em' => null,
                     'pagavel' => true,
                     'prevista' => true,
+                    'prazo' => prazo_da_parcela($cursor, 'prevista'),
                 ];
                 $temPagavel = true;
             }
@@ -1542,4 +1544,98 @@ function preparar_pagamento(int $usuarioId, mixed $ate): array
         $total += (int) $parcela['final'];
     }
     return ['parcelas' => $escolhidas, 'total' => $total];
+}
+
+function montar_avisos_painel(array $painel): array
+{
+    $avisos = [];
+    $recente = (new DateTimeImmutable('today'))->modify('-7 days')->format('Y-m-d');
+    foreach ($painel['alertas'] as $alerta) {
+        $avisos[] = [
+            'tipo' => 'desconto',
+            'texto' => 'O desconto de ' . formatar_percentual($alerta['percentual']) . ' de ' . $alerta['nome']
+                . ' acaba ' . ($alerta['mes_que_vem'] ? 'mês que vem' : 'neste mês') . '. No mês seguinte o valor volta ao normal.',
+        ];
+    }
+    foreach ($painel['atletas'] as $atleta) {
+        foreach ($atleta['meses'] as $mes) {
+            $nome = (string) $atleta['nome'];
+            $rotulo = formatar_mes((string) $mes['competencia']);
+            $prazo = (string) ($mes['prazo'] ?? '');
+            if ($prazo === 'atrasada') {
+                $avisos[] = ['tipo' => 'atraso', 'texto' => 'A mensalidade de ' . $rotulo . ' de ' . $nome . ' está atrasada.'];
+            } elseif ($prazo === 'prazo') {
+                $avisos[] = [
+                    'tipo' => 'prazo',
+                    'texto' => 'O prazo da mensalidade de ' . $rotulo . ' de ' . $nome . ' acaba em ' . formatar_data(fim_do_mes((string) $mes['competencia'])) . '.',
+                ];
+            } elseif (($mes['situacao'] ?? '') === 'paga' && !empty($mes['pago_em']) && substr((string) $mes['pago_em'], 0, 10) >= $recente) {
+                $avisos[] = [
+                    'tipo' => 'pago',
+                    'texto' => 'O pagamento de ' . $rotulo . ' de ' . $nome . ' foi confirmado em ' . formatar_data((string) $mes['pago_em']) . '.',
+                ];
+            }
+        }
+    }
+    return $avisos;
+}
+
+function quadro_pagamentos(): array
+{
+    $mes = mes_atual();
+    $recente = (new DateTimeImmutable('today'))->modify('-7 days')->format('Y-m-d');
+    $linhas = q(
+        "SELECT c.competencia, c.situacao, c.pago_em, c.valor_final_centavos,
+                a.nome AS aluno_nome, u.nome AS pagador_nome
+         FROM cobrancas c
+         JOIN alunos a ON a.id = c.aluno_id
+         JOIN responsaveis r ON r.id = c.pagador_id
+         JOIN usuarios u ON u.id = r.usuario_id
+         WHERE c.competencia <= ? OR (c.situacao = 'paga' AND c.pago_em >= ?)
+         ORDER BY a.nome, c.competencia",
+        [$mes, $recente]
+    );
+    $pagaram = [];
+    $nao = [];
+    $avisos = [];
+    foreach ($linhas as $linha) {
+        $paga = $linha['situacao'] === 'paga';
+        $prazo = prazo_da_parcela((string) $linha['competencia'], $paga ? 'paga' : 'aberta');
+        $item = [
+            'aluno_nome' => (string) $linha['aluno_nome'],
+            'pagador_nome' => (string) $linha['pagador_nome'],
+            'competencia' => (string) $linha['competencia'],
+            'valor' => (int) $linha['valor_final_centavos'],
+            'prazo' => $prazo,
+            'pago_em' => $linha['pago_em'],
+        ];
+        $rotulo = formatar_mes((string) $linha['competencia']);
+        $pagoEm = substr((string) ($linha['pago_em'] ?? ''), 0, 10);
+        if ($paga) {
+            $doMes = substr((string) $linha['competencia'], 0, 7) === substr($mes, 0, 7);
+            if ($doMes || ($pagoEm !== '' && $pagoEm >= $recente)) {
+                $pagaram[] = $item;
+            }
+            if ($pagoEm !== '' && $pagoEm >= $recente) {
+                $avisos[] = [
+                    'tipo' => 'pago',
+                    'texto' => $item['aluno_nome'] . ' pagou ' . $rotulo . ' em ' . formatar_data($pagoEm) . '. Quem paga é ' . $item['pagador_nome'] . '.',
+                ];
+            }
+            continue;
+        }
+        $nao[] = $item;
+        if ($prazo === 'atrasada') {
+            $avisos[] = [
+                'tipo' => 'atraso',
+                'texto' => 'A mensalidade de ' . $rotulo . ' de ' . $item['aluno_nome'] . ' está atrasada. Quem paga é ' . $item['pagador_nome'] . '.',
+            ];
+        } elseif ($prazo === 'prazo') {
+            $avisos[] = [
+                'tipo' => 'prazo',
+                'texto' => 'O prazo da mensalidade de ' . $rotulo . ' de ' . $item['aluno_nome'] . ' acaba em ' . formatar_data(fim_do_mes((string) $linha['competencia'])) . '. Quem paga é ' . $item['pagador_nome'] . '.',
+            ];
+        }
+    }
+    return ['pagaram' => $pagaram, 'nao' => $nao, 'avisos' => $avisos];
 }

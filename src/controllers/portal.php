@@ -6,6 +6,8 @@ function inicio(): void
 {
     $usuario = require_login();
     if ($usuario['papel'] === 'equipe') {
+        sincronizar_todos_pendentes();
+        $quadro = quadro_pagamentos();
         render('inicio_equipe', [
             'titulo' => 'Início',
             'contagens' => [
@@ -16,6 +18,10 @@ function inicio(): void
                 'sem_conta' => count(alunos_sem_conta()),
             ],
             'avisos' => avisos_desconto_inicial(),
+            'avisos_pagamento' => array_values(array_filter(
+                $quadro['avisos'],
+                static fn (array $aviso): bool => $aviso['tipo'] !== 'desconto'
+            )),
         ]);
         return;
     }
@@ -30,11 +36,14 @@ function inicio(): void
     $usuarioId = (int) $usuario['id'];
     $aluno = perfil_aluno($usuarioId);
     $responsavel = perfil_responsavel($usuarioId);
+    sincronizar_pagamentos_pendentes($usuarioId);
+    $avisosPagamento = montar_avisos_painel(painel_pagamentos($usuarioId));
     if ($aluno !== null && $responsavel !== null) {
         render('inicio_pessoa', [
             'titulo' => 'Início',
             'turmas' => turmas_do_usuario(['id' => $usuarioId, 'papel' => 'aluno']),
             'filhos' => filhos_do_usuario($usuarioId),
+            'avisos_pagamento' => $avisosPagamento,
         ]);
         return;
     }
@@ -42,6 +51,7 @@ function inicio(): void
         render('inicio_responsavel', [
             'titulo' => 'Meus filhos',
             'filhos' => filhos_do_usuario($usuarioId),
+            'avisos_pagamento' => $avisosPagamento,
         ]);
         return;
     }
@@ -49,6 +59,7 @@ function inicio(): void
         'titulo' => 'Minhas turmas',
         'turmas' => turmas_do_usuario($usuario),
         'papel' => $usuario['papel'],
+        'avisos_pagamento' => $avisosPagamento,
     ]);
 }
 

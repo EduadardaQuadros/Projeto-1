@@ -325,6 +325,8 @@ input:focus, select:focus {
 
 .bloco { margin-bottom: 14px; }
 
+.depois-painel { margin-top: 40px; }
+
 .bloco .form { margin-top: 12px; }
 
 .ficha { margin: 0; }
@@ -369,6 +371,10 @@ input:focus, select:focus {
     color: var(--selo);
     font-weight: 700;
 }
+
+.aviso-ok { background: var(--ok-bg); color: var(--ok); }
+
+.selo-atraso { background: var(--erro-bg); color: var(--erro); }
 
 .nav {
     position: fixed;

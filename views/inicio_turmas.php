@@ -1,5 +1,6 @@
 <h1>Minhas turmas</h1>
 <?php if ($papel !== 'professor'): ?>
+    <?php parte('avisos_pagamento', ['avisos_pagamento' => $avisos_pagamento ?? []]); ?>
     <p><a class="btn btn-linha" href="<?= e(url('/pagamentos')) ?>">Pagamentos</a></p>
 <?php endif; ?>
 <?php if ($turmas === []): ?>

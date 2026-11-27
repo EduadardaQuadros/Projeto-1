@@ -21,6 +21,15 @@
         <span>Atletas sem mensalidade</span>
     </a>
 </div>
+<?php if ($avisos_pagamento !== []): ?>
+    <section class="bloco depois-painel">
+        <h2>Pagamentos</h2>
+        <p><a href="<?= e(url('/mensalidades/situacao')) ?>">Ver quem pagou e quem não pagou</a></p>
+        <?php parte('avisos_pagamento', ['avisos_pagamento' => $avisos_pagamento]); ?>
+    </section>
+<?php else: ?>
+    <p class="depois-painel"><a class="btn btn-linha" href="<?= e(url('/mensalidades/situacao')) ?>">Situação dos pagamentos</a></p>
+<?php endif; ?>
 <?php if ($avisos !== []): ?>
     <section class="bloco">
         <h2>Desconto inicial acabando</h2>

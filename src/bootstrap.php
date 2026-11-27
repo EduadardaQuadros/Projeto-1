@@ -18,6 +18,7 @@ session_start();
 require __DIR__ . '/helpers.php';
 require __DIR__ . '/Auth.php';
 require __DIR__ . '/regras.php';
+require __DIR__ . '/asaas.php';
 
 set_exception_handler(static function (Throwable $e): void {
     error_log($e->__toString());

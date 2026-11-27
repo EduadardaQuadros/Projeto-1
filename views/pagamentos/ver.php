@@ -1,11 +1,6 @@
 <h1>Pagamentos</h1>
-<?php foreach ($alertas as $alerta): ?>
-    <p class="aviso">
-        O desconto de <?= e(formatar_percentual($alerta['percentual'])) ?> de <?= e($alerta['nome']) ?>
-        acaba <?= $alerta['mes_que_vem'] ? 'mês que vem' : 'neste mês' ?>.
-        No mês seguinte o valor volta ao normal.
-    </p>
-<?php endforeach; ?>
+<p class="estado">Cada pessoa aparece separada. O prazo do mês acaba no último dia.</p>
+<?php parte('avisos_pagamento', ['avisos_pagamento' => $avisos]); ?>
 
 <?php if ($atletas === []): ?>
     <p class="vazio">Não há mensalidade ligada a este login.</p>
@@ -14,7 +9,7 @@
         <?= csrf_field() ?>
         <?php foreach ($atletas as $atleta): ?>
             <section class="bloco">
-                <h2><?= e($atleta['nome']) ?></h2>
+                <h2>Pagamento de <?= e($atleta['nome']) ?></h2>
                 <?php if ($atleta['meses'] === []): ?>
                     <p class="vazio">A equipe ainda não definiu a mensalidade.</p>
                 <?php else: ?>
@@ -38,8 +33,12 @@
                                 <?php endif; ?>
                                 <p>
                                     <strong><?= e(formatar_centavos((int) $mes['final'])) ?></strong>
-                                    <?php if ($mes['situacao'] === 'paga'): ?>
+                                    <?php if (($mes['prazo'] ?? '') === 'paga'): ?>
                                         <span class="selo">Paga<?= $mes['pago_em'] ? ' em ' . e(formatar_data((string) $mes['pago_em'])) : '' ?></span>
+                                    <?php elseif (($mes['prazo'] ?? '') === 'atrasada'): ?>
+                                        <span class="selo selo-atraso">Atrasada</span>
+                                    <?php elseif (($mes['prazo'] ?? '') === 'prazo'): ?>
+                                        <span class="selo">Prazo acaba em <?= e(formatar_data(fim_do_mes($mes['competencia']))) ?></span>
                                     <?php elseif ($mes['prevista']): ?>
                                         <span class="selo selo-inativo">Prevista</span>
                                     <?php else: ?>
@@ -83,12 +82,12 @@
         <?php if ($tem_pagavel): ?>
             <section class="bloco pagamento-base">
                 <h2>Pagamento</h2>
-                <p class="estado">O programa de pagamento entra nesta etapa. Nada é cobrado agora e a mensalidade continua em aberto.</p>
+                <p class="estado">Você segue para a página do Asaas e paga só com Pix ou cartão de crédito. A mensalidade continua em aberto até o pagamento ser confirmado.</p>
                 <div class="total-conta">
                     <span>Total selecionado</span>
                     <strong id="total-pagamento">R$ 0,00</strong>
                 </div>
-                <button class="btn" type="submit">Continuar para o pagamento</button>
+                <button class="btn" type="submit">Pagar com Pix ou cartão</button>
             </section>
         <?php endif; ?>
     </form>

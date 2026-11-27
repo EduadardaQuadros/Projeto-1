@@ -2,6 +2,19 @@
 
 declare(strict_types=1);
 
+function mensalidades_situacao(): void
+{
+    require_papel('equipe');
+    sincronizar_todos_pendentes();
+    $quadro = quadro_pagamentos();
+    render('mensalidades/situacao', [
+        'titulo' => 'Situação dos pagamentos',
+        'pagaram' => $quadro['pagaram'],
+        'nao' => $quadro['nao'],
+        'avisos' => $quadro['avisos'],
+    ]);
+}
+
 function mensalidades_contas(): void
 {
     require_papel('equipe');

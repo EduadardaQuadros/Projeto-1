@@ -5,6 +5,7 @@ $itensMenu = [
     ['/mensalidades/planos', 'Planos'],
     ['/mensalidades/descontos', 'Descontos'],
     ['/mensalidades/mes', 'Mês'],
+    ['/mensalidades/situacao', 'Situação'],
 ];
 ?>
 <div class="linha-acoes">

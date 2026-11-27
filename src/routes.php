@@ -14,10 +14,10 @@ require __DIR__ . '/controllers/pagamentos.php';
 function despachar(): void
 {
     $metodo = $_SERVER['REQUEST_METHOD'] ?? 'GET';
-    if ($metodo === 'POST') {
+    $caminho = request_path();
+    if ($metodo === 'POST' && $caminho !== '/webhooks/asaas') {
         csrf_check();
     }
-    $caminho = request_path();
     $rotas = [
         ['GET', '#^/convite/([a-f0-9]{32})$#', 'convite_ver'],
         ['POST', '#^/convite/([a-f0-9]{32})$#', 'convite_entrar'],
@@ -81,6 +81,7 @@ function despachar(): void
         ['POST', '#^/responsaveis/(\d+)/mensalidades$#', 'responsavel_salvar_familia'],
 
         ['GET', '#^/mensalidades$#', 'mensalidades_contas'],
+        ['GET', '#^/mensalidades/situacao$#', 'mensalidades_situacao'],
         ['GET', '#^/mensalidades/planos$#', 'planos_listar'],
         ['GET', '#^/mensalidades/planos/novo$#', 'plano_novo'],
         ['POST', '#^/mensalidades/planos$#', 'plano_criar'],
@@ -99,6 +100,7 @@ function despachar(): void
 
         ['GET', '#^/pagamentos$#', 'pagamentos_ver'],
         ['POST', '#^/pagamentos$#', 'pagamentos_preparar'],
+        ['POST', '#^/webhooks/asaas$#', 'pagamentos_webhook'],
 
         ['GET', '#^/filhos/(\d+)$#', 'filho_ver'],
         ['GET', '#^/minhas-turmas/(\d+)$#', 'minha_turma'],

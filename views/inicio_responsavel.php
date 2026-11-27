@@ -1,4 +1,5 @@
 <h1>Meus filhos</h1>
+<?php parte('avisos_pagamento', ['avisos_pagamento' => $avisos_pagamento]); ?>
 <p><a class="btn btn-linha" href="<?= e(url('/pagamentos')) ?>">Pagamentos</a></p>
 <?php if ($filhos === []): ?>
     <p class="vazio">Nenhum aluno vinculado a este responsável.</p>
